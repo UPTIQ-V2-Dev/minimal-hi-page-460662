@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# pnpm wrapper script
+# This script tries to use pnpm if available, otherwise falls back to npm
+
+if command -v pnpm &> /dev/null; then
+    # pnpm is available, use it
+    pnpm "$@"
+elif command -v npm &> /dev/null; then
+    # pnpm not available, try to install it first
+    echo "pnpm not found, attempting to install..."
+    npm install -g pnpm 2>/dev/null
+    
+    if command -v pnpm &> /dev/null; then
+        # pnpm installation succeeded
+        pnpm "$@"
+    else
+        # pnpm installation failed, use npm as fallback
+        echo "Using npm as fallback for pnpm..."
+        case "$1" in
+            "install")
+                rm -f pnpm-lock.yaml 2>/dev/null
+                npm install
+                ;;
+            "build")
+                npm run build
+                ;;
+            "run")
+                shift
+                npm run "$@"
+                ;;
+            *)
+                npm "$@"
+                ;;
+        esac
+    fi
+else
+    echo "Neither pnpm nor npm found!"
+    exit 1
+fi
